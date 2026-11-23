@@ -15,7 +15,7 @@ class FrasesService {
   ];
 
 final Random _azar = Random(); // generador de numeros aleatorios
-String? _ultima;
+String? _ultima; // nullable
 
 String siguiente() {
   String elegida;

@@ -3,9 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart'; // guardar datos si
 import '../models/tarea.dart';
 
 class AlmacenamientoTareas {
-  static const String _clave = 'tareas_v1';
+  static const String _clave = 'tareas_v1'; // llave o identificador para busqueda en almacenamiento local
 
-  Future<List<Tarea>> cargar() async {
+  Future<List<Tarea>> cargar() async { // metodo asincrono
     final prefs = await SharedPreferences.getInstance();
     final texto = prefs.getString(_clave);
     if (texto == null) return [];

@@ -3,28 +3,28 @@ import '../models/tarea.dart';
 import '../services/almacenamiento_tareas.dart';
 import 'detalle_tarea_screen.dart';
 
-class PantallaListaTareas extends StatefulWidget { // la interfaz debe redibujarse deinamicamente cada vez que se cargan, agregan, marcan o eliminan tareas
+class PantallaListaTareas extends StatefulWidget {
   const PantallaListaTareas({super.key});
 
   @override
-  State<PantallaListaTareas> createState() => _PantallaListaTareasState(); // variable de estado
+  State<PantallaListaTareas> createState() => _PantallaListaTareasState();
 }
 
-class _PantallaListaTareasState extends State<PantallaListaTareas> { // memoria de la pantalla
-  final _almacen = AlmacenamientoTareas(); // instancia del servicio encargado de leer y escribir las tareas en el almacenamiento del dispositivo
-  List<Tarea> _tareas = []; // estado principal de datos
-  bool _cargando = true; // estado de la interfaz 
+class _PantallaListaTareasState extends State<PantallaListaTareas> {
+  final _almacen = AlmacenamientoTareas();
+  List<Tarea> _tareas = [];
+  bool _cargando = true;
 
   @override
-  void initState() { // se ejecuta una vez cuando entra en el arbol de widgets
+  void initState() {
     super.initState();
-    _cargar(); // carga inicial
+    _cargar();
   }
 
   Future<void> _cargar() async {
     final guardadas = await _almacen.cargar();
-    if (!mounted) return; 
-    setState(() { // asigna las tareas recuperadas a tareas y apaga cargando
+    if (!mounted) return;
+    setState(() {
       _tareas = guardadas;
       _cargando = false;
     });
@@ -45,8 +45,8 @@ class _PantallaListaTareasState extends State<PantallaListaTareas> { // memoria 
     await _guardar();
   }
 
-  Future<void> _eliminar(int indice) async {
-    setState(() => _tareas.removeAt(indice));
+  Future<void> _eliminar(Tarea tarea) async {
+    setState(() => _tareas.removeWhere((t) => t.id == tarea.id));
     await _guardar();
   }
 
@@ -81,18 +81,45 @@ class _PantallaListaTareasState extends State<PantallaListaTareas> { // memoria 
 
   @override
   Widget build(BuildContext context) {
+    final tareasOrdenadas = [..._tareas]
+      ..sort(
+        (a, b) => (a.completada ? 1 : 0).compareTo(b.completada ? 1 : 0),
+      );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis misiones')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Mis misiones'),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_tareas.length}',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
-          : _tareas.isEmpty
+          : tareasOrdenadas.isEmpty
               ? const Center(
                   child: Text('Sin misiones. ¡Agrega la primera!'),
                 )
               : ListView.builder(
-                  itemCount: _tareas.length,
+                  itemCount: tareasOrdenadas.length,
                   itemBuilder: (context, indice) {
-                    final tarea = _tareas[indice];
+                    final tarea = tareasOrdenadas[indice];
                     return Card(
                       child: ListTile(
                         leading: Checkbox(
@@ -113,7 +140,7 @@ class _PantallaListaTareasState extends State<PantallaListaTareas> { // memoria 
                         trailing: IconButton(
                           icon: const Icon(Icons.delete_outline),
                           tooltip: 'Eliminar',
-                          onPressed: () => _eliminar(indice),
+                          onPressed: () => _eliminar(tarea),
                         ),
                         onTap: () => _abrirDetalle(tarea),
                       ),
@@ -129,8 +156,6 @@ class _PantallaListaTareasState extends State<PantallaListaTareas> { // memoria 
   }
 }
 
-/// Diálogo con su propio estado para liberar los controladores
-/// de forma segura cuando se cierra.
 class _DialogoNuevaTarea extends StatefulWidget {
   const _DialogoNuevaTarea();
 
